@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Secret Friend - Number Raffle</title>
+    <style>
+      :root {
+        --accent: #0f62fe;
+        --accent-strong: #0043ce;
+        --bg: #0b0c0f;
+        --panel: #14161a;
+        --text: #e8eefb;
+        --muted: #93a1b3;
+        --ok: #24a148;
+        --warn: #f1c21b;
+        --err: #da1e28;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      h1 {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+        letter-spacing: .2px;
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        background: var(--panel);
+        border: 1px solid #20242b;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      label {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      input[type="number"] {
+        width: 120px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #2a2f38;
+        background: #0e1014;
+        color: var(--text);
+      }
+      button {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid #2a2f38;
+        background: var(--accent);
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      button.secondary {
+        background: #21252d;
+        color: var(--text);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .grid {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+        gap: 10px;
+      }
+      .tile {
+        user-select: none;
+        background: #171a20;
+        border: 1px solid #232832;
+        border-radius: 10px;
+        padding: 14px 0;
+        text-align: center;
+        font-weight: 700;
+        font-size: 18px;
+        transition: transform 120ms ease, background 120ms ease, color 120ms ease, border-color 120ms ease;
+      }
+      .tile.current {
+        background: var(--accent);
+        border-color: var(--accent-strong);
+        color: #fff;
+        transform: scale(1.06);
+      }
+      .tile.selected {
+        background: #122016;
+        border-color: #223c2a;
+        color: #b9f6c6;
+      }
+      .status {
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--muted);
+      }
+      .status .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid #2a2f38;
+        background: #111319;
+      }
+      .result {
+        margin-top: 18px;
+        background: radial-gradient(1200px 400px at 50% -100px, rgba(15,98,254, .18), transparent 40%),
+                    linear-gradient(180deg, rgba(255,255,255,.04) 0, rgba(255,255,255,0) 60%),
+                    var(--panel);
+        border: 1px solid #20242b;
+        border-radius: 16px;
+        padding: 18px;
+      }
+      .result h2 {
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .big-number {
+        font-size: clamp(48px, 12vw, 120px);
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-align: center;
+        color: #ffffff;
+        text-shadow: 0 8px 30px rgba(15,98,254,.35);
+      }
+      .legend {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .legend .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-right: 6px;
+        border: 1px solid #2a2f38;
+      }
+      .dot.current { background: var(--accent); border-color: var(--accent-strong); }
+      .dot.selected { background: #24a148; border-color: #1f803a; }
+      .footer {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+      }
+      .note {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 6px;
+      }
+      .history {
+        margin-top: 16px;
+        background: var(--panel);
+        border: 1px solid #20242b;
+        border-radius: 12px;
+        padding: 14px;
+      }
+      .history h2 {
+        margin: 0 0 10px 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: #111319;
+        border: 1px solid #2a2f38;
+        color: #e8eefb;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Secret Friend - Number Raffle</h1>
+        <div class="controls">
+          <label for="playerCount">How many players? (1–30)</label>
+          <input id="playerCount" type="number" min="1" max="30" value="8" />
+          <button id="createBtn" class="secondary" title="Create or reset the raffle">Create Secret Friend</button>
+        </div>
+      </header>
+
+      <div id="statusBar" class="status" aria-live="polite">
+        <span class="badge" id="phaseBadge">Idle</span>
+        <span id="statusText">Set the player count and click “Create Secret Friend”.</span>
+        <button id="nextBtn" title="Draw next number" hidden disabled>Next</button>
+      </div>
+
+      <div class="grid" id="numbersGrid" aria-label="Numbers grid"></div>
+
+      <div class="result" aria-live="polite">
+        <h2>Current draw</h2>
+        <div id="bigNumber" class="big-number">—</div>
+        <div class="legend">
+          <div><span class="dot current"></span>Current highlight (remaining grid)</div>
+        </div>
+        <div class="note">This is the core game logic. Visual wheel/roulette animations can be added later.</div>
+      </div>
+
+      <div class="history">
+        <h2>Picked order</h2>
+        <div id="historyList" class="chips" aria-live="polite" aria-label="Picked numbers in order"></div>
+      </div>
+
+      <div class="footer">
+        <button id="resetBtn" class="secondary" title="Reset all state">Reset</button>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        /** @typedef {{ totalCount:number, remaining:number[], drawn:number[], isSpinning:boolean, current:number|null, spinTimer:number|null, tickTimer:number|null }} RaffleState */
+        /** @type {RaffleState} */
+        const state = {
+          totalCount: 0,
+          remaining: [],
+          drawn: [],
+          isSpinning: false,
+          current: null,
+          spinTimer: null,
+          tickTimer: null
+        };
+
+        // DOM
+        const inputCount = document.getElementById('playerCount');
+        const createBtn = document.getElementById('createBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const grid = document.getElementById('numbersGrid');
+        const bigNumber = document.getElementById('bigNumber');
+        const statusText = document.getElementById('statusText');
+        const phaseBadge = document.getElementById('phaseBadge');
+        const historyList = document.getElementById('historyList');
+
+        // Audio (created on first user interaction)
+        /** @type {AudioContext|null} */
+        let audioCtx = null;
+        function ensureAudio() {
+          try {
+            if (!audioCtx) {
+              const Ctx = window.AudioContext || window.webkitAudioContext;
+              if (Ctx) audioCtx = new Ctx();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+              audioCtx.resume();
+            }
+          } catch (_) {
+            // ignore audio errors; continue silently
+          }
+        }
+        function playTick() {
+          if (!audioCtx) return;
+          try {
+            const ctx = audioCtx;
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            // Slight randomization for more organic tick
+            const base = 800;
+            const span = 300;
+            osc.frequency.value = base + Math.random() * span;
+            osc.type = 'triangle';
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.08, now + 0.005);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.08);
+          } catch (_) {
+            // ignore; continue
+          }
+        }
+
+        // Utils
+        function setPhase(phase, text) {
+          phaseBadge.textContent = phase;
+          statusText.textContent = text;
+        }
+
+        function renderGrid() {
+          grid.innerHTML = '';
+          const frag = document.createDocumentFragment();
+          // Show only remaining numbers in the grid
+          for (let i = 0; i < state.remaining.length; i++) {
+            const n = state.remaining[i];
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.textContent = String(n);
+            if (state.current === n) tile.classList.add('current');
+            frag.appendChild(tile);
+          }
+          grid.appendChild(frag);
+        }
+
+        function setBigNumber(value) {
+          bigNumber.textContent = value == null ? '—' : String(value);
+        }
+
+        function renderHistory() {
+          historyList.innerHTML = '';
+          const frag = document.createDocumentFragment();
+          for (let i = 0; i < state.drawn.length; i++) {
+            const n = state.drawn[i];
+            const chip = document.createElement('div');
+            chip.className = 'chip';
+            chip.textContent = String(n);
+            frag.appendChild(chip);
+          }
+          historyList.appendChild(frag);
+        }
+
+        function cryptoRandomInt(minInclusive, maxInclusive) {
+          const range = maxInclusive - minInclusive + 1;
+          if (range <= 0) return minInclusive;
+          // Use rejection sampling to avoid modulo bias
+          const maxUint = 0xffffffff;
+          const limit = Math.floor(maxUint / range) * range;
+          let rand;
+          const buf = new Uint32Array(1);
+          do {
+            crypto.getRandomValues(buf);
+            rand = buf[0];
+          } while (rand >= limit);
+          return minInclusive + (rand % range);
+        }
+
+        function pickFromRemaining() {
+          if (state.remaining.length === 0) return null;
+          const idx = cryptoRandomInt(0, state.remaining.length - 1);
+          const value = state.remaining[idx];
+          // Remove from remaining (swap with end for O(1))
+          const last = state.remaining.length - 1;
+          [state.remaining[idx], state.remaining[last]] = [state.remaining[last], state.remaining[idx]];
+          state.remaining.pop();
+          return value;
+        }
+
+        function resetSpinTimers() {
+          if (state.spinTimer != null) {
+            clearTimeout(state.spinTimer);
+            state.spinTimer = null;
+          }
+          if (state.tickTimer != null) {
+            clearInterval(state.tickTimer);
+            state.tickTimer = null;
+          }
+        }
+
+        function createGame() {
+          resetSpinTimers();
+          const raw = Number(inputCount.value);
+          const count = Number.isFinite(raw) ? Math.max(1, Math.min(30, Math.floor(raw))) : 1;
+          inputCount.value = String(count);
+
+          state.totalCount = count;
+          state.remaining = Array.from({ length: count }, (_, i) => i + 1);
+          state.drawn = [];
+          state.isSpinning = false;
+          state.current = null;
+          setBigNumber(null);
+          renderGrid();
+          renderHistory();
+          nextBtn.hidden = false;
+          nextBtn.disabled = count <= 0;
+          setPhase('Ready', 'Click “Next” to draw a number.');
+        }
+
+        function finishIfDone() {
+          if (state.remaining.length === 0) {
+            nextBtn.disabled = true;
+            setPhase('Complete', 'All numbers have been drawn.');
+            return true;
+          }
+          return false;
+        }
+
+        function nextDraw() {
+          if (state.isSpinning) return;
+          if (finishIfDone()) return;
+          if (state.remaining.length === 0) return;
+          // If only one number remains, choose immediately (skip spin)
+          if (state.remaining.length === 1) {
+            const chosen = pickFromRemaining();
+            state.current = chosen;
+            if (chosen != null) {
+              state.drawn.push(chosen);
+              setBigNumber(chosen);
+              renderGrid();
+              renderHistory();
+            }
+            state.isSpinning = false;
+            nextBtn.disabled = true;
+            finishIfDone();
+            return;
+          }
+
+          ensureAudio();
+          state.isSpinning = true;
+          nextBtn.disabled = true;
+          setPhase('Spinning', 'Drawing next number…');
+
+          // Random spin duration between 5 and 10 seconds
+          const durationSec = cryptoRandomInt(5, 10);
+          const startedAt = Date.now();
+          const endAt = startedAt + durationSec * 1000;
+
+          // Lightweight "tick" to pulse the current highlight without heavy animation
+          state.tickTimer = setInterval(() => {
+            // During spinning, show a transient highlight over a random remaining number
+            if (state.remaining.length === 0) return;
+            const randomIdx = cryptoRandomInt(0, state.remaining.length - 1);
+            state.current = state.remaining[randomIdx];
+            renderGrid();
+            playTick();
+          }, 120);
+
+          state.spinTimer = setTimeout(() => {
+            // Finalize the draw
+            resetSpinTimers();
+            const chosen = pickFromRemaining();
+            state.current = chosen;
+            if (chosen != null) {
+              state.drawn.push(chosen);
+              setBigNumber(chosen);
+              renderGrid();
+              renderHistory();
+              setPhase('Result', 'Number ' + chosen + ' drawn.');
+            } else {
+              setPhase('Idle', 'No numbers remaining.');
+            }
+            state.isSpinning = false;
+            nextBtn.disabled = state.remaining.length === 0;
+            finishIfDone();
+          }, Math.max(0, endAt - Date.now()));
+        }
+
+        function hardReset() {
+          resetSpinTimers();
+          state.totalCount = 0;
+          state.remaining = [];
+          state.drawn = [];
+          state.isSpinning = false;
+          state.current = null;
+          grid.innerHTML = '';
+          setBigNumber(null);
+          nextBtn.hidden = true;
+          nextBtn.disabled = true;
+          setPhase('Idle', 'Set the player count and click “Create Secret Friend”.');
+        }
+
+        // Events
+        createBtn.addEventListener('click', createGame);
+        nextBtn.addEventListener('click', nextDraw);
+        resetBtn.addEventListener('click', hardReset);
+
+        // Init
+        setPhase('Idle', 'Set the player count and click “Create Secret Friend”.');
+        // Ensure "Next" is hidden until a game is created
+        (function initHideNext() { try { nextBtn.hidden = true; } catch (_) {} })();
+      })();
+    </script>
+  </body>
+</html>
+
+
